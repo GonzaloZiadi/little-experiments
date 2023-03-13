@@ -1,0 +1,251 @@
+<!--
+  - Goal: Copy Medium's highlight feature.
+  - Assumes `p` tags have ascending ids.
+  - Selecting text highlights it with `mark` and saves it to localStorage (keyed by id).
+  - on page load, uses localStorage to highlight relevant portions
+
+  - duplicate https://medium.com/me/list/highlights to view highlights
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+
+    <style>
+      html {
+        font-size: 18px;
+      }
+
+      body {
+        font-family: system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans","Liberation Sans",sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji";
+        line-height: 1.8;
+        font-weight: 400;
+        color: #212529;
+        margin: 0 auto;
+        max-width: 700px;
+        padding: 20px 0px;
+      }
+
+      /* took color from Medium - https://medium.com/me/list/highlights */
+      ::selection {
+        background: rgba(26, 137, 23, 0.1);
+      }
+
+      a::selection {
+        color: #003554;
+      }
+
+      mark {
+        background: rgba(26, 137, 23, 0.1);
+      }
+
+      #saved-highlights ul {
+        padding-left: 0px;
+        list-style-type: none;
+      }
+
+      #saved-highlights li {
+        margin-bottom: 1rem;
+      }
+
+      /* took this from Medium - https://medium.com/me/list/highlights */
+      .shadow-box {
+        box-shadow: rgb(230, 230, 230) 0px 1px 4px;
+        border: 1px solid rgb(230, 230, 230);
+        padding: 0.5rem 1rem;
+        margin-bottom: 1rem;
+        border-radius: 5px;
+      }
+
+      a {
+        text-decoration: none;
+      }
+
+      .shadow-box-meta {
+        color: rgb(117, 117, 117);
+        font-size: 0.75rem;
+      }
+
+      .shadow-box-meta a {
+        color: rgb(117, 117, 117);
+      }
+    </style>
+  </head>
+
+  <body>
+    <p id="1">Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas.</p>
+    <p id="2">It is a long established fact that a reader will be distracted by the readable content of a page when looking at its layout. The point of using Lorem Ipsum is that it has a more-or-less normal distribution of letters, as opposed to using 'Content here, content here', making it look like readable English.</p>
+    <p id="3">Neque porro quisquam est qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit...</p>
+
+    <h2>Saved Highlights</h2>
+    <div id="saved-highlights"></div>
+
+    <script>
+      const savedSelectionsStorageKey = "saved-lines";
+
+      document.addEventListener("DOMContentLoaded", (e) => {
+        loadSavedHighlights();
+      });
+
+      // TODO: Rather than removing onclick, show tooltip and option to delete
+      window.onclick = e => {
+        if (e.target.tagName === "MARK") {
+          const node = e.target.parentNode;
+          unhighlightAndDelete(node, e.target.textContent);
+        }
+      };
+
+      document.addEventListener("mouseup", (e) => {
+        const windowSelection = window.getSelection();
+        const selection = windowSelection.toString();
+
+        // ignore click
+        if (selection === "") {
+          return;
+        }
+
+        let selectedElements = [
+          windowSelection.anchorNode.parentNode, windowSelection.focusNode.parentNode
+        ];
+
+        // Find the topmost parent `p` element with an id
+        for (const [i, element] of selectedElements.entries()) {
+          if (element.id === "") {
+            selectedElements[i] = element.parentNode;
+          }
+        }
+
+        // Put in ascending order in case highlight was from later `p` to earlier `p`
+        if (selectedElements[0].id > selectedElements[1].id) {
+          const temp = selectedElements[0];
+          selectedElements[0] = selectedElements[1];
+          selectedElements[1] = temp;
+        }
+
+        window.getSelection().empty();
+
+        highlightElement(selectedElements, selection);
+      });
+
+      function loadSavedHighlights() {
+        let savedHighlightsHtml = "";
+
+        const savedHighlights = getSavedHighlights();
+        for (const obj of savedHighlights) {
+          const markup = highlightElement(JSON.parse(obj.selectedElements), obj.selection);
+          const splitMarkup = markup.replaceAll("</mark><mark>", "</mark></p><p><mark>");
+
+          savedHighlightsHtml += `<div class='shadow-box'><p class='shadow-box-meta'>From <a href='#'>Why I Stopped Listening To Music In The Shower</a></p><p>${ splitMarkup }</p></div>`;
+        }
+
+        document.getElementById("saved-highlights").innerHTML = savedHighlightsHtml;
+      }
+
+      function highlightElement(selectedElements, selection) {
+        saveHighlight(selectedElements, selection);
+
+        const startIndex = Number(selectedElements[0].id);
+        const endIndex = Number(selectedElements[1].id);
+
+        if (startIndex === endIndex) {
+          const element = selectedElements[0];
+          const finalMarkup = highlightMarkup(element, selection);
+
+          element.innerHTML = finalMarkup;
+
+          return finalMarkup;
+        }
+
+        let finalMarkup = "";
+
+        for (let i = startIndex; i <= endIndex; i++) {
+          const element = document.getElementById(i);
+          let editedSelection = element.textContent;
+
+          if (i === startIndex) {
+            editedSelection = selection.split("\n")[0];
+          } else if (i === endIndex) {
+            editedSelection = selection.split("\n").pop();
+          }
+
+          const markup = highlightMarkup(element, editedSelection);
+          finalMarkup += markup;
+          element.innerHTML = markup;
+        }
+
+        return finalMarkup;
+      }
+
+      function unhighlightAndDelete(element, selection) {
+        element.innerHTML = element.innerHTML.replace("<mark>", "").replace("</mark>", "");(element);
+        deleteSavedHighlight(selection);
+      }
+
+      function highlightMarkup(element, selection) {
+        const textContent = element.textContent;
+        const selectionStart = textContent.indexOf(selection);
+        const selectionEnd = selectionStart + selection.length;
+
+        return textContent.substring(0, selectionStart)
+          + "<mark>" + textContent.substring(selectionStart, selectionEnd) + "</mark>"
+          + textContent.substring(selectionEnd);
+      }
+
+
+      // LOCAL STORAGE
+      function saveHighlight(selectedElements, selection) {
+        let highlights = getSavedHighlights();
+
+        for (let i = 0; i < highlights.length; i++) {
+          if (highlights[i].selection === selection) {
+            return;
+          }
+        }
+
+        const transSelectedElements = selectedElements.map(elem => {
+          return {
+            id: elem.id,
+            textContent: elem.textContent
+          };
+        });
+
+        highlights.push({
+          selection: selection,
+          selectedElements: JSON.stringify(transSelectedElements)
+        });
+
+        storeHighlights(highlights);
+      }
+
+      function deleteSavedHighlight(selection) {
+        const highlights = getSavedHighlights();
+
+        for (const [i, obj] of highlights.entries()) {
+          if (obj.selection === selection) {
+            highlights.splice(i, 1);
+          }
+        }
+
+        storeHighlights(highlights);
+      }
+
+      function storeHighlights(highlights) {
+        localStorage.setItem(savedSelectionsStorageKey, JSON.stringify(highlights));
+      }
+
+      // An array of {selection, elements} objs
+      function getSavedHighlights() {
+        const existing = localStorage.getItem(savedSelectionsStorageKey);
+        if (!existing) {
+          return [];
+        }
+
+        return JSON.parse(existing);
+      }
+    </script>
+  </body>
+</html>
