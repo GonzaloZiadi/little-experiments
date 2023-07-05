@@ -1,38 +1,39 @@
-body {
-  font-family: 'Comfortaa', sans-serif;
+// See https://stackoverflow.com/a/25776315
+@mixin center-x-absolute {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
 }
 
-.main-wrapper {
-  width: 90%;
-  max-width: 900px;
-  margin: 3em auto;
-  text-align: center;
+$badge-background: #1c1a1a;
+$event-color: #d4fd56;
+$time-background: #d4fd56;
+$time-color: #1c1a1a;
+
+body {
+  padding: 4em;
 }
 
 .badge {
-  position: relative;
-  margin: 1.5em 3em;
+  position: absolute;
+  display: inline-block;
   width: 4em;
   height: 6.2em;
   border-radius: 10px;
-  display: inline-block;
-  top: 0;
-  transition: all 0.2s ease;
+  cursor: default;
+  background: $badge-background;
+  font-family: sans-serif;
+  text-align: center;
   
   &:before,
   &:after {
     position: absolute;
+    left: 0;
     width: inherit;
     height: inherit;
     border-radius: inherit;
     background: inherit;
     content: "";
-
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    margin: auto;
   }
   
   &:before {
@@ -42,60 +43,25 @@ body {
   &:after {
     transform: rotate(-60deg);
   }
-  
-  &:hover {
-    top: -4px;
-  }
-  
-  .circle {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
 
-    width: 60px;
-    height: 60px;
+  .event {
+    @include center-x-absolute;
 
     font-size: 35px;
-    line-height: 60px;
-    color: white;
-
-    margin: auto;
-
-    //background: #fff;
-    z-index: 10;
-    border-radius: 50%;
-
-    vertical-align: middle;
+    color: $event-color;
+    z-index: 2;
+    top: 20%;
   }
 
-  .ribbon {
-    position: absolute;
-    left: 50%;
-    transform: translate(-50%);
-    bottom: 7%;
+  .time {
+    @include center-x-absolute;
 
-    width: 40px;
-
+    bottom: 10%;
+    background: $time-background;
+    color: $time-color;
     border-radius: 4px;
-
-    padding: 5px 5px 4px;
-    
-   z-index: 11;
-
-    color: #fff;
     font-size: 14px;
-    
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.27);
-    text-shadow: 0 2px 2px rgba(0, 0, 0, 0.1);
-    background: linear-gradient(to bottom right, #555 0%, #333 100%);
-    cursor: default;
-
-        //height: 15px;
+    padding: 3px;
+    z-index: 3;
   }
-}
-
-.yellow {
- background: linear-gradient(to bottom right, #ffeb3b 0%, #fbc02d 100%);
 }
