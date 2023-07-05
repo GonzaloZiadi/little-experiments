@@ -11,7 +11,7 @@ $time-background: #d4fd56;
 $time-color: #1c1a1a;
 
 body {
-  padding: 4em;
+  padding-top: 2em;
 }
 
 .badge {
@@ -64,4 +64,16 @@ body {
     padding: 3px;
     z-index: 3;
   }
+}
+
+.row {
+  display: flex;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.column {
+  display: flex;
+  justify-content: center;
+  flex: 1;
 }

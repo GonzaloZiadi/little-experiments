@@ -1,5 +1,5 @@
 body {
-  padding: 4em;
+  padding-top: 2em;
 }
 
 .badge {
@@ -48,4 +48,16 @@ body {
   font-size: 14px;
   padding: 3px;
   z-index: 3;
+}
+
+.row {
+  display: flex;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.column {
+  display: flex;
+  justify-content: center;
+  flex: 1;
 }/*# sourceMappingURL=hexa-badge.css.map */
